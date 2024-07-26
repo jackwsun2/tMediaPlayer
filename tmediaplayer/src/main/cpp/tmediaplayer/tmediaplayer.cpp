@@ -72,6 +72,9 @@ tMediaOptResult tMediaPlayerContext::prepare(
 
     LOGD("Prepare media file: %s", media_file_p);
     this->format_ctx = avformat_alloc_context();
+    this->format_ctx->probesize = 1048576;
+    this->format_ctx->max_analyze_duration =  204800;
+    //this->format_ctx->flags |= AVFMT_FLAG_NOBUFFER;
     int result = avformat_open_input(&format_ctx, media_file_p, nullptr, nullptr);
     if (result < 0) {
         LOGE("Avformat open file fail: %d", result);

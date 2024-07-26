@@ -76,7 +76,9 @@ class PlayerActivity : BaseCoroutineStateActivity<PlayerActivity.Companion.State
                 }
             })
 
-            val loadResult = mediaPlayer.prepare(intent.getMediaFileExtra())
+            //val loadResult = mediaPlayer.prepare(intent.getMediaFileExtra())
+            val url: String = "rtmp://192.168.1.103/live/livestream"
+            val loadResult = mediaPlayer.prepare(url)
             when (loadResult) {
                 OptResult.Success -> {
                     Log.d(TAG, "Load media file success.")
