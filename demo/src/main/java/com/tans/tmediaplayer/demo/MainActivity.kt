@@ -2,6 +2,7 @@ package com.tans.tmediaplayer.demo
 
 import android.Manifest
 import android.os.Build
+import android.os.Bundle
 import android.view.View
 import androidx.activity.addCallback
 import androidx.fragment.app.Fragment
@@ -20,11 +21,12 @@ class MainActivity : BaseCoroutineStateActivity<MainActivity.Companion.State>(St
 
     override val layoutId: Int = R.layout.main_activity
 
-    private val fragments: Map<TabType, Fragment> by lazyViewModelField("fragments") {
-        mapOf(
-            TabType.Videos to VideosFragment(),
-            TabType.Audios to AudiosFragment()
-        )
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.main_activity)
+
+        val url: String = "rtmp://192.168.1.103/live/livestream"
+        startActivity(PlayerActivity.createIntent(this, url))
     }
 
     override fun CoroutineScope.firstLaunchInitDataCoroutine() {  }
@@ -48,31 +50,6 @@ class MainActivity : BaseCoroutineStateActivity<MainActivity.Companion.State>(St
             runCatching {
                 permissionsRequestSuspend(*permissionsNeed.toTypedArray())
             }
-            val viewBinding = MainActivityBinding.bind(contentView)
-
-            viewBinding.viewPager.adapter = object : FragmentStateAdapter(this@MainActivity) {
-                override fun getItemCount(): Int = fragments.size
-                override fun createFragment(position: Int): Fragment = fragments[TabType.entries[position]]!!
-            }
-            viewBinding.viewPager.isSaveEnabled = false
-            viewBinding.viewPager.offscreenPageLimit = fragments.size
-            viewBinding.tabLayout.addOnTabSelectedListener(object :
-                TabLayout.OnTabSelectedListener {
-                override fun onTabSelected(tab: TabLayout.Tab?) {
-                    when (tab?.position) {
-                        TabType.Videos.ordinal -> updateState { it.copy(selectedTab = TabType.Videos) }
-                        TabType.Audios.ordinal -> updateState { it.copy(selectedTab = TabType.Audios) }
-                    }
-                }
-                override fun onTabUnselected(tab: TabLayout.Tab?) {}
-                override fun onTabReselected(tab: TabLayout.Tab?) {}
-            })
-            TabLayoutMediator(viewBinding.tabLayout, viewBinding.viewPager) { tab, position ->
-                tab.text = when (TabType.entries[position]) {
-                    TabType.Videos -> "VIDEOS"
-                    TabType.Audios -> "AUDIOS"
-                }
-            }.attach()
         }
     }
 

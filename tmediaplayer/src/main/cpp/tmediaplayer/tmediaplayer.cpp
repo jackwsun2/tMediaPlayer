@@ -880,7 +880,11 @@ void tMediaPlayerContext::release() {
     }
 
     // File Metadata
-    releaseMetadata(fileMetadata);
+    if (fileMetadata != nullptr) {
+        releaseMetadata(fileMetadata);
+        free(fileMetadata);
+        fileMetadata = nullptr;
+    }
 
     // Container name
     if (containerName != nullptr) {

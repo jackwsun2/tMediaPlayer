@@ -163,8 +163,10 @@ Java_com_tans_tmediaplayer_player_tMediaPlayer_releaseNative(
         jobject j_player,
         jlong native_player) {
     auto *player = reinterpret_cast<tMediaPlayerContext *>(native_player);
-    player->jvm = nullptr;
-    player->release();
+    if (player != nullptr) {
+        player->jvm = nullptr;
+        player->release();
+    }
 }
 // endregion
 
