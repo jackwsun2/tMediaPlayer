@@ -25,8 +25,7 @@ class MainActivity : BaseCoroutineStateActivity<MainActivity.Companion.State>(St
         super.onCreate(savedInstanceState)
         setContentView(R.layout.main_activity)
 
-        val url: String = "rtmp://192.168.1.103/live/livestream"
-        startActivity(PlayerActivity.createIntent(this, url))
+        startActivity(PlayerActivity.createIntent(this, ""))
     }
 
     override fun CoroutineScope.firstLaunchInitDataCoroutine() {  }

@@ -58,7 +58,17 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent">
-
+        <EditText
+            android:id="@+id/play_url"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#00F2F2F2"
+            android:textColor="@color/white"
+            android:text="rtmp://192.168.1.168/live/livestream"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:hint="输入播放地址" />
         <SeekBar
             android:id="@+id/player_sb"
             android:layout_width="0dp"
@@ -67,7 +77,7 @@
             android:layout_marginTop="10dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/play_url"
             android:layout_marginStart="15dp"
             android:layout_marginEnd="15dp"
             tools:progress="50" />
@@ -158,7 +168,8 @@
                 android:id="@+id/play_iv"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:src="@drawable/icon_play"/>
+                android:src="@drawable/icon_play"
+                android:visibility="visible"/>
             
         </FrameLayout>
 

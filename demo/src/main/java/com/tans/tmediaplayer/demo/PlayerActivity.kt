@@ -1,6 +1,7 @@
 package com.tans.tmediaplayer.demo
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -29,6 +30,8 @@ import java.io.File
 
 @FullScreenStyle
 class PlayerActivity : BaseCoroutineStateActivity<PlayerActivity.Companion.State>(State()) {
+    private val PREF_FILE_NAME = "meida_player_pref_file"
+    private val PREF_KEY_PLAY_URL = "play_url"
 
     override val layoutId: Int = R.layout.player_activity
 
@@ -38,6 +41,40 @@ class PlayerActivity : BaseCoroutineStateActivity<PlayerActivity.Companion.State
             audioOutputSampleBitDepth = AudioSampleBitDepth.ThreeTwoBits,
             enableVideoHardwareDecoder = true
         )
+    }
+
+    private fun fetchPlayUrl(): String {
+        val preferences: SharedPreferences = this.getSharedPreferences(PREF_FILE_NAME, Context.MODE_PRIVATE)
+        return preferences.getString(PREF_KEY_PLAY_URL, null) ?: ""
+    }
+
+    private fun savePlayUrl(playUrl: String) {
+        val preferences: SharedPreferences = this.getSharedPreferences(PREF_FILE_NAME, Context.MODE_PRIVATE)
+        preferences.edit().putString(PREF_KEY_PLAY_URL, playUrl).apply()
+    }
+
+    private fun preparePlayer(playUrl: String) : Boolean {
+        mediaPlayer.setListener(object : tMediaPlayerListener {
+            override fun onPlayerState(state: tMediaPlayerState) {
+                updateState { it.copy(playerState = state) }
+            }
+
+            override fun onProgressUpdate(progress: Long, duration: Long) {
+                updateState { it.copy(progress = Progress(progress = progress, duration = duration)) }
+            }
+        })
+
+        val loadResult = mediaPlayer.prepare(playUrl)
+        when (loadResult) {
+            OptResult.Success -> {
+                Log.d(TAG, "Load media file success.")
+                return true
+            }
+            OptResult.Fail -> {
+                Log.e(TAG, "Load media file fail.")
+                return false
+            }
+        }
     }
 
     private fun View.isVisible(): Boolean = this.visibility == View.VISIBLE
@@ -65,27 +102,13 @@ class PlayerActivity : BaseCoroutineStateActivity<PlayerActivity.Companion.State
 
     override fun CoroutineScope.firstLaunchInitDataCoroutine() {
         launch(Dispatchers.IO) {
-
-            mediaPlayer.setListener(object : tMediaPlayerListener {
-                override fun onPlayerState(state: tMediaPlayerState) {
-                    updateState { it.copy(playerState = state) }
-                }
-
-                override fun onProgressUpdate(progress: Long, duration: Long) {
-                    updateState { it.copy(progress = Progress(progress = progress, duration = duration)) }
-                }
-            })
-
-            val loadResult = mediaPlayer.prepare(intent.getMediaFileExtra())
-            when (loadResult) {
-                OptResult.Success -> {
-                    Log.d(TAG, "Load media file success.")
-                }
-
-                OptResult.Fail -> {
-                    Log.e(TAG, "Load media file fail.")
-                }
+            var playUrl = intent.getMediaFileExtra()
+            if (playUrl.isEmpty()) {
+                playUrl = fetchPlayUrl()
+            } else {
+                savePlayUrl(playUrl)
             }
+            preparePlayer(playUrl)
         }
     }
 
@@ -147,7 +170,8 @@ class PlayerActivity : BaseCoroutineStateActivity<PlayerActivity.Companion.State
 
             if (fixedState is tMediaPlayerState.Prepared ||
                 fixedState is tMediaPlayerState.Paused ||
-                fixedState is tMediaPlayerState.Stopped
+                fixedState is tMediaPlayerState.Stopped ||
+                fixedState is tMediaPlayerState.Error
             ) {
                 viewBinding.playIv.visibility = View.VISIBLE
             } else {
@@ -170,15 +194,30 @@ class PlayerActivity : BaseCoroutineStateActivity<PlayerActivity.Companion.State
         }
 
         viewBinding.playIv.clicks(this) {
-            mediaPlayer.play()
+            val playUrl = viewBinding.playUrl.text.toString()
+            val loadResult = preparePlayer(playUrl)
+            if (loadResult) {
+                mediaPlayer.attachPlayerView(viewBinding.playerView)
+                mediaPlayer.attachSubtitleView(viewBinding.subtitleTv)
+                mediaPlayer.play()
+                savePlayUrl(playUrl)
+            }
         }
 
         viewBinding.pauseIv.clicks(this) {
-            mediaPlayer.pause()
+            mediaPlayer.stop()
+            mediaPlayer.release()
         }
 
         viewBinding.replayIv.clicks(this) {
-            mediaPlayer.play()
+            val playUrl = viewBinding.playUrl.text.toString()
+            val loadResult = preparePlayer(playUrl)
+            if (loadResult) {
+                mediaPlayer.attachPlayerView(viewBinding.playerView)
+                mediaPlayer.attachSubtitleView(viewBinding.subtitleTv)
+                mediaPlayer.play()
+                savePlayUrl(playUrl)
+            }
         }
 
         viewBinding.playerSb.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -203,7 +242,8 @@ class PlayerActivity : BaseCoroutineStateActivity<PlayerActivity.Companion.State
             val info = mediaPlayer.getMediaInfo()
             if (info != null) {
                 viewBinding.actionLayout.hide()
-                val d = MediaInfoDialog(info, intent.getMediaFileExtra())
+                val playUrl = fetchPlayUrl()
+                val d = MediaInfoDialog(info, playUrl)
                 d.show(supportFragmentManager, "MediaInfoDialog#${System.currentTimeMillis()}")
             }
 
@@ -215,7 +255,17 @@ class PlayerActivity : BaseCoroutineStateActivity<PlayerActivity.Companion.State
             d.show(supportFragmentManager, "PlayerSettingsDialog#${System.currentTimeMillis()}}")
         }
 
-        viewBinding.actionLayout.setOnClickListener {  }
+        viewBinding.actionLayout.setOnClickListener {
+
+        }
+
+        val playUrl = fetchPlayUrl()
+        if (playUrl.isNotEmpty())
+            viewBinding.playUrl.setText(playUrl)
+        viewBinding.playUrl.setOnEditorActionListener { v, actionId, event ->
+            savePlayUrl(v.text.toString())
+            false
+        }
     }
 
     override fun onPause() {
