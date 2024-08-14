@@ -206,7 +206,7 @@ class PlayerActivity : BaseCoroutineStateActivity<PlayerActivity.Companion.State
 
         viewBinding.pauseIv.clicks(this) {
             mediaPlayer.stop()
-            mediaPlayer.release()
+            //mediaPlayer.release()
         }
 
         viewBinding.replayIv.clicks(this) {
